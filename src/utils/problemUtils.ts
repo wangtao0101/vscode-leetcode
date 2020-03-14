@@ -96,7 +96,7 @@ async function getProblemSpecialCode(
 }
 
 export async function getEntryFile(language: string, problem: string): Promise<string> {
-    const extDir: string = vscode.extensions.getExtension("shengchen.vscode-leetcode")!.extensionPath;
+    const extDir: string = vscode.extensions.getExtension("wangtao0101.debug-leetcode")!.extensionPath;
     const fileExt: string = genFileExt(language);
     const specialCode: string = await getProblemSpecialCode(language, problem, fileExt, extDir);
     const tmpEntryCode: string = (

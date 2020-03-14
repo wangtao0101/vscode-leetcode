@@ -85,7 +85,6 @@ class DebugExecutor {
             return;
         }
 
-        // const extDir: string = vscode.extensions.getExtension("shengchen.vscode-leetcode")!.extensionPath;
         debugConfig.program = await getEntryFile(meta.lang, meta.id);
 
         const funName: string = this.getProblemFunName(language, problemType);
