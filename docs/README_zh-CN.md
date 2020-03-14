@@ -102,9 +102,11 @@ See [issue](https://github.com/jdneo/vscode-leetcode/issues/241) and [PR](https:
 
 ![debug](https://raw.githubusercontent.com/jdneo/vscode-leetcode/master/docs/gifs/debug.gif)
 
-> 当前 vscode-leetcode 仅仅支持 Python3 和 Javascript 语言，未来我们会支持所有支持 vscode debug protocal 的语言, 欢迎大家踊跃 PR 其他语言
+> 当前 vscode-leetcode 仅仅支持 Python3 和 Javascript 语言，未来我们会支持更多支持 vscode debug protocal 的语言, 欢迎大家踊跃 PR 其他语言，我的下一步计划是支持c和c++
 
 > 不是所有的题目都支持（支持大部分免费题目），只有支持的题目才有调试选项
+
+> 如果你有关于调试功能的任何问题，欢迎[创建issue](https://github.com/wangtao0101/vscode-leetcode/issues/new?template=bug.md)
 
 -   Python3 调试的必要条件
 

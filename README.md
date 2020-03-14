@@ -102,9 +102,11 @@ Thanks for [@yihong0618](https://github.com/yihong0618) provided a workaround wh
 
 ![debug](https://raw.githubusercontent.com/wangtao0101/vscode-leetcode/master/docs/gifs/debug.gif)
 
-> Currently vscode-leetcode only support Python3 and Javascript language and in the future we will support all lanuages which support vscode debug protocal. Welcome to get PR for another language.
+> Currently vscode-leetcode only support Python3 and Javascript language and in the future we will support more lanuages which support vscode debug protocal. Welcome to get PR for another language. My next plan is to support c and c++.
 
 > Not all problems are supported(most free problems are supported) and only supported problems have debug option.
+
+> If you have any issue about the debug feature, you can [create a issue](https://github.com/wangtao0101/vscode-leetcode/issues/new?template=bug.md) with detail information
 
 -   Python3 debug Requirement
 
