@@ -14,7 +14,7 @@ import { DialogType, promptForOpenOutputChannel, showFileSelectDialog } from "..
 import { getActiveFilePath } from "../utils/workspaceUtils";
 import { leetCodeSubmissionProvider } from "../webview/leetCodeSubmissionProvider";
 
-const supportDebugLanguages: string[] = ["javascript", "python3"];
+const supportDebugLanguages: string[] = ["javascript", "python3", "cpp"];
 
 export async function testSolution(uri?: vscode.Uri): Promise<void> {
     try {
@@ -49,7 +49,7 @@ export async function testSolution(uri?: vscode.Uri): Promise<void> {
         );
 
         const fileContent: Buffer = fs.readFileSync(filePath);
-        const meta: { id: string, lang: string } | null = fileMeta(fileContent.toString());
+        const meta: { id: string; lang: string } | null = fileMeta(fileContent.toString());
 
         if (meta != null && supportDebugLanguages.indexOf(meta.lang) !== -1 && problemTypes[meta.id] != null) {
             picks.push({
@@ -79,7 +79,8 @@ export async function testSolution(uri?: vscode.Uri): Promise<void> {
             case ":direct":
                 const testString: string | undefined = await vscode.window.showInputBox({
                     prompt: "Enter the test cases.",
-                    validateInput: (s: string): string | undefined => s && s.trim() ? undefined : "Test case must not be empty.",
+                    validateInput: (s: string): string | undefined =>
+                        s && s.trim() ? undefined : "Test case must not be empty.",
                     placeHolder: "Example: [1,2,3]\\n4",
                     ignoreFocusOut: true,
                 });
@@ -92,19 +93,27 @@ export async function testSolution(uri?: vscode.Uri): Promise<void> {
                 if (testFile && testFile.length) {
                     const input: string = (await fse.readFile(testFile[0].fsPath, "utf-8")).trim();
                     if (input) {
-                        result = await leetCodeExecutor.testSolution(filePath, parseTestString(input.replace(/\r?\n/g, "\\n")));
+                        result = await leetCodeExecutor.testSolution(
+                            filePath,
+                            parseTestString(input.replace(/\r?\n/g, "\\n")),
+                        );
                     } else {
                         vscode.window.showErrorMessage("The selected test file must not be empty.");
                     }
                 }
                 break;
             case ":debug-default":
-                result = await debugExecutor.execute(filePath, problemTypes[meta!.id]!.testCase.replace(/"/g, '\\"'), meta!.lang);
+                result = await debugExecutor.execute(
+                    filePath,
+                    problemTypes[meta!.id]!.testCase.replace(/"/g, '\\"'),
+                    meta!.lang,
+                );
                 break;
             case ":debug-direct":
                 const ts: string | undefined = await vscode.window.showInputBox({
                     prompt: "Enter the test cases.",
-                    validateInput: (s: string): string | undefined => s && s.trim() ? undefined : "Test case must not be empty.",
+                    validateInput: (s: string): string | undefined =>
+                        s && s.trim() ? undefined : "Test case must not be empty.",
                     placeHolder: "Example: [1,2,3]\\n4",
                     ignoreFocusOut: true,
                 });
@@ -120,6 +129,9 @@ export async function testSolution(uri?: vscode.Uri): Promise<void> {
         }
         leetCodeSubmissionProvider.show(result);
     } catch (error) {
-        await promptForOpenOutputChannel("Failed to test the solution. Please open the output channel for details.", DialogType.error);
+        await promptForOpenOutputChannel(
+            "Failed to test the solution. Please open the output channel for details.",
+            DialogType.error,
+        );
     }
 }

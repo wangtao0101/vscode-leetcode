@@ -1,12 +1,14 @@
 import * as fse from "fs-extra";
 import * as net from "net";
-// import * as path from "path";
+import * as path from "path";
 import * as vscode from "vscode";
 import { leetCodeChannel } from "../leetCodeChannel";
 import { leetCodeExecutor } from "../leetCodeExecutor";
-import { fileMeta, getEntryFile, parseTestString } from "../utils/problemUtils";
+import { fileMeta, parseTestString, getEntryFile } from "../utils/problemUtils";
 import { leetCodeSubmissionProvider } from "../webview/leetCodeSubmissionProvider";
 import problemTypes from "./problemTypes";
+import { executeCommand } from "../utils/cpUtils";
+import { extensionState } from "../extensionState";
 
 interface IDebugConfig {
     type: string;
@@ -14,6 +16,8 @@ interface IDebugConfig {
     env?: {
         [key: string]: any;
     };
+    cwd?: string;
+    sourceFileMap?: any;
 }
 
 const debugConfigMap: Map<string, IDebugConfig> = new Map([
@@ -21,6 +25,21 @@ const debugConfigMap: Map<string, IDebugConfig> = new Map([
         "javascript",
         {
             type: "node",
+        },
+    ],
+    [
+        "cpp",
+        {
+            type: "cppdbg",
+            MIMode: "gdb",
+            setupCommands: [
+                {
+                    description: "Enable pretty-printing for gdb",
+                    text: "-enable-pretty-printing",
+                    ignoreFailures: true,
+                },
+            ],
+            miDebuggerPath: "F:\\software\\mingw64\\bin\\gdb.exe",
         },
     ],
     [
@@ -71,8 +90,8 @@ class DebugExecutor {
             return;
         }
 
-        const fileContent: Buffer = await fse.readFile(filePath);
-        const meta: { id: string; lang: string } | null = fileMeta(fileContent.toString());
+        const sourceFileContent: string = (await fse.readFile(filePath)).toString();
+        const meta: { id: string; lang: string } | null = fileMeta(sourceFileContent);
         if (meta == null) {
             vscode.window.showErrorMessage(
                 "File meta info has been changed, please check the content: '@lc app=leetcode.cn id=xx lang=xx'.",
@@ -92,24 +111,70 @@ class DebugExecutor {
         if (language === "javascript") {
             // check whether module.exports is exist or not
             const moduleExportsReg: RegExp = new RegExp(`module.exports = ${problemType.funName};`);
-            if (!moduleExportsReg.test(fileContent.toString())) {
+            if (!moduleExportsReg.test(sourceFileContent)) {
                 fse.writeFile(
                     filePath,
-                    fileContent.toString() +
+                    sourceFileContent +
                         `\n// @after-stub-for-debug-begin\nmodule.exports = ${funName};\n// @after-stub-for-debug-end`,
                 );
             }
         } else if (language === "python3") {
             // check whether module.exports is exist or not
             const moduleExportsReg: RegExp = /# @before-stub-for-debug-begin/;
-            if (!moduleExportsReg.test(fileContent.toString())) {
+            if (!moduleExportsReg.test(sourceFileContent)) {
                 await fse.writeFile(
                     filePath,
                     `# @before-stub-for-debug-begin\nfrom python3problem${meta.id} import *\nfrom typing import *\n# @before-stub-for-debug-end\n\n` +
-                        fileContent.toString(),
+                        sourceFileContent,
                 );
             }
             debugConfig.env!.PYTHONPATH = debugConfig.program;
+        } else if (language === "cpp") {
+            const newSourceFileName = `source${language}problem${meta.id}.cpp`;
+            const newSourceFilePath = path.join(extensionState.cachePath, newSourceFileName);
+
+            // check whether module.exports is exist or not
+            const moduleExportsReg: RegExp = /\/\/ @before-stub-for-debug-begin/;
+            if (!moduleExportsReg.test(sourceFileContent)) {
+                const newContent =
+                    `// @before-stub-for-debug-begin\n#include <vector>\nusing namespace std;\n// @before-stub-for-debug-end\n\n` +
+                    sourceFileContent;
+                await fse.writeFile(filePath, newContent);
+
+                //create source file for build because g++ does not support inlucde file with chinese name
+                await fse.writeFile(newSourceFilePath, newContent);
+            } else {
+                await fse.writeFile(newSourceFilePath, sourceFileContent);
+            }
+
+            // insert include code and replace function namem
+            const includeFileRegExp: RegExp = /\/\/ @@stub\-for\-include\-code@@/;
+            const entryFile = debugConfig.program;
+            const entryFileContent: string = (await fse.readFile(entryFile)).toString();
+            const newEntryFileContent: string = entryFileContent.replace(
+                includeFileRegExp,
+                `#include "${newSourceFileName}"`,
+            );
+            await fse.writeFile(entryFile, newEntryFileContent);
+
+            const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
+
+            try {
+                const includePath = path.dirname(exePath);
+                await executeCommand("g++.exe -g", [`${debugConfig.program} -o ${exePath} -I ${includePath}`]);
+            } catch (e) {
+                vscode.window.showErrorMessage(e);
+                return;
+            }
+
+            debugConfig.program = exePath;
+            debugConfig.cwd = extensionState.cachePath;
+            // map build source file to user source file
+            debugConfig.sourceFileMap = {
+                [newSourceFilePath]: filePath,
+            };
+
+            console.log(vscode.debug.breakpoints);
         }
 
         const args: string[] = [
@@ -121,7 +186,7 @@ class DebugExecutor {
             meta.id,
             this.server.address().port.toString(),
         ];
-        vscode.debug.startDebugging(
+        const debuging = await vscode.debug.startDebugging(
             undefined,
             Object.assign({}, debugConfig, {
                 request: "launch",
@@ -129,6 +194,20 @@ class DebugExecutor {
                 args,
             }),
         );
+
+        if (debuging) {
+            vscode.debug.onDidChangeBreakpoints(event => {
+                console.log(event);
+            });
+
+            vscode.debug.onDidStartDebugSession(event => {
+                console.log(event);
+            });
+
+            vscode.debug.onDidTerminateDebugSession(event => {
+                console.log(event);
+            });
+        }
 
         return;
     }
