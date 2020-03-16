@@ -1,12 +1,61 @@
 # Debug LeetCode
 
+> Solve LeetCode problems in VS Code and enjoy debugging
+
+## About Debug LeetCode
+
+> This extension is a fork of extension [vscode-leetcode](https://marketplace.visualstudio.com/items?itemName=shengchen.vscode-leetcode). Currently, the only difference between two extension is debugging.
+
+### Debug a Problem
+
+![debug](https://raw.githubusercontent.com/wangtao0101/vscode-leetcode/master/docs/gifs/debug.gif)
+
+> Currently debug-leetcode only support Python3 and Javascript language and in the future we will support more lanuages which support vscode debug protocal. Welcome to get PR for another language. My next plan is to support c and c++.
+
+> Not all problems are supported(most free problems are supported) and only supported problems have debug option.
+
+> If you have any issue about the debug feature, you can [create a issue](https://github.com/wangtao0101/vscode-leetcode/issues/new?template=bug.md) with detail information
+
+-   Python3 debug Requirement
+
+    -   Step 1. Install a supported version of Python3 on your system (note: that the system install of Python on macOS is not supported).
+
+    -   Step 2. Install the Python extension for Visual Studio Code.
+
+-   Javasript debug Requirement
+
+    Nothing just vscode
+
+# Be careful ❗️
+
+Extention will generate some stub code in your current file like:
+
+For python:
+
+```python
+# @before-stub-for-debug-begin
+from python3problem1 import *
+from typing import *
+# @before-stub-for-debug-end
+```
+
+For javascript
+
+```js
+// @after-stub-for-debug-begin
+module.exports = twoSum;
+// @after-stub-for-debug-end
+```
+
+If you delete some stub code and forget to restore, you can delete all the stub code and the extension will generate again in next debug.
+
+---
+
 ## About why to publish another leetcode extension.
 
 See [issue](https://github.com/jdneo/vscode-leetcode/issues/241) and [PR](https://github.com/jdneo/vscode-leetcode/pull/525)
 
 If you want to use this extension you may need uninstall another otherwise they may conflict.
-
-> Solve LeetCode problems in VS Code and enjoy debugging
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/jdneo/vscode-leetcode/master/resources/LeetCode.png" alt="">
@@ -95,51 +144,6 @@ Thanks for [@yihong0618](https://github.com/yihong0618) provided a workaround wh
     > You can specify whether including the problem description in comments or not by updating the setting `leetcode.showCommentDescription`.
 
     > You can switch the default language by triggering the command: `LeetCode: Switch Default Language`.
-
----
-
-### Debug a Problem
-
-![debug](https://raw.githubusercontent.com/wangtao0101/vscode-leetcode/master/docs/gifs/debug.gif)
-
-> Currently vscode-leetcode only support Python3 and Javascript language and in the future we will support more lanuages which support vscode debug protocal. Welcome to get PR for another language. My next plan is to support c and c++.
-
-> Not all problems are supported(most free problems are supported) and only supported problems have debug option.
-
-> If you have any issue about the debug feature, you can [create a issue](https://github.com/wangtao0101/vscode-leetcode/issues/new?template=bug.md) with detail information
-
--   Python3 debug Requirement
-
-    -   Step 1. Install a supported version of Python3 on your system (note: that the system install of Python on macOS is not supported).
-
-    -   Step 2. Install the Python extension for Visual Studio Code.
-
--   Javasript debug Requirement
-
-    Nothing just vscode
-
-# Be careful ❗️
-
-Extention will generate some stub code in your current file like:
-
-For python:
-
-```python
-# @before-stub-for-debug-begin
-from python3problem1 import *
-from typing import *
-# @before-stub-for-debug-end
-```
-
-For javascript
-
-```js
-// @after-stub-for-debug-begin
-module.exports = twoSum;
-// @after-stub-for-debug-end
-```
-
-If you delete some stub code and forget to restore, you can delete all the stub code and the extension will generate again in next debug.
 
 ---
 
