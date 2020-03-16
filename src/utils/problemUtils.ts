@@ -121,3 +121,14 @@ export function parseTestString(test: string): string {
         return `'${test.replace(/"/g, '\\"')}'`;
     }
 }
+
+export function randomString(len: number): string {
+    len = len || 32;
+    const $chars: string = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
+    const maxPos: number = $chars.length;
+    let pwd: string = "";
+    for (let i: number = 0; i < len; i++) {
+        pwd += $chars.charAt(Math.floor(Math.random() * maxPos));
+    }
+    return pwd;
+}

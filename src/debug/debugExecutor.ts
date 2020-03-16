@@ -2,13 +2,13 @@ import * as fse from "fs-extra";
 import * as net from "net";
 import * as path from "path";
 import * as vscode from "vscode";
+import { extensionState } from "../extensionState";
 import { leetCodeChannel } from "../leetCodeChannel";
 import { leetCodeExecutor } from "../leetCodeExecutor";
-import { fileMeta, parseTestString, getEntryFile } from "../utils/problemUtils";
+import { executeCommand } from "../utils/cpUtils";
+import { fileMeta, getEntryFile, parseTestString, randomString } from "../utils/problemUtils";
 import { leetCodeSubmissionProvider } from "../webview/leetCodeSubmissionProvider";
 import problemTypes from "./problemTypes";
-import { executeCommand } from "../utils/cpUtils";
-import { extensionState } from "../extensionState";
 
 interface IDebugConfig {
     type: string;
@@ -108,6 +108,9 @@ class DebugExecutor {
 
         const funName: string = this.getProblemFunName(language, problemType);
 
+        const newSourceFileName: string = `source${language}problem${meta.id}.cpp`;
+        const newSourceFilePath: string = path.join(extensionState.cachePath, newSourceFileName);
+
         if (language === "javascript") {
             // check whether module.exports is exist or not
             const moduleExportsReg: RegExp = new RegExp(`module.exports = ${problemType.funName};`);
@@ -130,18 +133,15 @@ class DebugExecutor {
             }
             debugConfig.env!.PYTHONPATH = debugConfig.program;
         } else if (language === "cpp") {
-            const newSourceFileName = `source${language}problem${meta.id}.cpp`;
-            const newSourceFilePath = path.join(extensionState.cachePath, newSourceFileName);
-
             // check whether module.exports is exist or not
             const moduleExportsReg: RegExp = /\/\/ @before-stub-for-debug-begin/;
             if (!moduleExportsReg.test(sourceFileContent)) {
-                const newContent =
+                const newContent: string =
                     `// @before-stub-for-debug-begin\n#include <vector>\nusing namespace std;\n// @before-stub-for-debug-end\n\n` +
                     sourceFileContent;
                 await fse.writeFile(filePath, newContent);
 
-                //create source file for build because g++ does not support inlucde file with chinese name
+                // create source file for build because g++ does not support inlucde file with chinese name
                 await fse.writeFile(newSourceFilePath, newContent);
             } else {
                 await fse.writeFile(newSourceFilePath, sourceFileContent);
@@ -149,7 +149,7 @@ class DebugExecutor {
 
             // insert include code and replace function namem
             const includeFileRegExp: RegExp = /\/\/ @@stub\-for\-include\-code@@/;
-            const entryFile = debugConfig.program;
+            const entryFile: string = debugConfig.program;
             const entryFileContent: string = (await fse.readFile(entryFile)).toString();
             const newEntryFileContent: string = entryFileContent.replace(
                 includeFileRegExp,
@@ -160,7 +160,7 @@ class DebugExecutor {
             const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
 
             try {
-                const includePath = path.dirname(exePath);
+                const includePath: string = path.dirname(exePath);
                 await executeCommand("g++.exe -g", [`${debugConfig.program} -o ${exePath} -I ${includePath}`]);
             } catch (e) {
                 vscode.window.showErrorMessage(e);
@@ -173,8 +173,6 @@ class DebugExecutor {
             debugConfig.sourceFileMap = {
                 [newSourceFilePath]: filePath,
             };
-
-            console.log(vscode.debug.breakpoints);
         }
 
         const args: string[] = [
@@ -186,27 +184,95 @@ class DebugExecutor {
             meta.id,
             this.server.address().port.toString(),
         ];
-        const debuging = await vscode.debug.startDebugging(
+        const debugSessionName: string = randomString(16);
+        const debuging: boolean = await vscode.debug.startDebugging(
             undefined,
             Object.assign({}, debugConfig, {
                 request: "launch",
-                name: "Launch Program",
+                name: debugSessionName,
                 args,
             }),
         );
 
-        if (debuging) {
-            vscode.debug.onDidChangeBreakpoints(event => {
-                console.log(event);
+        if (debuging && language === "cpp") {
+            const debugSessionDisposes: vscode.Disposable[] = [];
+
+            vscode.debug.breakpoints.map((bp: vscode.SourceBreakpoint) => {
+                if (bp.location.uri.fsPath === newSourceFilePath) {
+                    vscode.debug.removeBreakpoints([bp]);
+                }
             });
 
-            vscode.debug.onDidStartDebugSession(event => {
-                console.log(event);
+            vscode.debug.breakpoints.map((bp: vscode.SourceBreakpoint) => {
+                if (bp.location.uri.fsPath === filePath) {
+                    const location: vscode.Location = new vscode.Location(
+                        vscode.Uri.file(newSourceFilePath),
+                        bp.location.range,
+                    );
+                    vscode.debug.addBreakpoints([
+                        new vscode.SourceBreakpoint(location, bp.enabled, bp.condition, bp.hitCondition, bp.logMessage),
+                    ]);
+                }
             });
 
-            vscode.debug.onDidTerminateDebugSession(event => {
-                console.log(event);
-            });
+            debugSessionDisposes.push(
+                vscode.debug.onDidChangeBreakpoints((event: vscode.BreakpointsChangeEvent) => {
+                    event.added.map((bp: vscode.SourceBreakpoint) => {
+                        if (bp.location.uri.fsPath === filePath) {
+                            const location: vscode.Location = new vscode.Location(
+                                vscode.Uri.file(newSourceFilePath),
+                                bp.location.range,
+                            );
+                            vscode.debug.addBreakpoints([
+                                new vscode.SourceBreakpoint(
+                                    location,
+                                    bp.enabled,
+                                    bp.condition,
+                                    bp.hitCondition,
+                                    bp.logMessage,
+                                ),
+                            ]);
+                        }
+                    });
+
+                    event.removed.map((bp: vscode.SourceBreakpoint) => {
+                        if (bp.location.uri.fsPath === filePath) {
+                            const location: vscode.Location = new vscode.Location(
+                                vscode.Uri.file(newSourceFilePath),
+                                bp.location.range,
+                            );
+                            vscode.debug.removeBreakpoints([new vscode.SourceBreakpoint(location)]);
+                        }
+                    });
+
+                    event.changed.map((bp: vscode.SourceBreakpoint) => {
+                        if (bp.location.uri.fsPath === filePath) {
+                            const location: vscode.Location = new vscode.Location(
+                                vscode.Uri.file(newSourceFilePath),
+                                bp.location.range,
+                            );
+                            vscode.debug.removeBreakpoints([new vscode.SourceBreakpoint(location)]);
+                            vscode.debug.addBreakpoints([
+                                new vscode.SourceBreakpoint(
+                                    location,
+                                    bp.enabled,
+                                    bp.condition,
+                                    bp.hitCondition,
+                                    bp.logMessage,
+                                ),
+                            ]);
+                        }
+                    });
+                }),
+            );
+
+            debugSessionDisposes.push(
+                vscode.debug.onDidTerminateDebugSession((event: vscode.DebugSession) => {
+                    if (event.name === debugSessionName) {
+                        debugSessionDisposes.map((d: vscode.Disposable) => d.dispose());
+                    }
+                }),
+            );
         }
 
         return;

@@ -18,5 +18,5 @@ int main()
 
     vector<int> nums{2, 7, 11, 15};
 
-    // cout << (new Solution())->twoSum(nums, 9)[0];
+    cout << (new Solution())->twoSum(nums, 9)[0];
 }
