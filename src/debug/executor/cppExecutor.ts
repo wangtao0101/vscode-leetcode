@@ -2,6 +2,7 @@ import * as fse from "fs-extra";
 import * as path from "path";
 import * as vscode from "vscode";
 import { extensionState } from "../../extensionState";
+import { leetCodeChannel } from "../../leetCodeChannel";
 import { executeCommand } from "../../utils/cpUtils";
 import { fileMeta, getEntryFile, randomString } from "../../utils/problemUtils";
 import { IDebugConfig, IProblemType } from "../debugExecutor";
@@ -72,11 +73,17 @@ class CppExecutor {
 
         const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
 
+        const extDir: string = vscode.extensions.getExtension("wangtao0101.debug-leetcode")!.extensionPath;
+        const thirdPartyPath: string = path.join(extDir, "src/debug/thirdparty/c");
+
         try {
             const includePath: string = path.dirname(exePath);
-            await executeCommand("g++.exe -g", [`${debugConfig.program} -o ${exePath} -I ${includePath}`]);
+            await executeCommand("g++.exe -g", [
+                `${debugConfig.program} -o ${exePath} -I ${includePath} -I ${thirdPartyPath}`,
+            ]);
         } catch (e) {
-            vscode.window.showErrorMessage(e);
+            // vscode.window.showErrorMessage(e);
+            leetCodeChannel.show();
             return;
         }
 

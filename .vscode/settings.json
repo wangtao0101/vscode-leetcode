@@ -11,5 +11,11 @@
     },
     "tslint.autoFixOnSave": true,
     "tslint.ignoreDefinitionFiles": true,
-    "C_Cpp.errorSquiggles": "Disabled"
+    "C_Cpp.errorSquiggles": "Disabled",
+    "files.associations": {
+        ".prettierrc": "yaml",
+        "cjson.c": "cpp",
+        "iostream": "cpp",
+        "ostream": "cpp"
+    }
 }
