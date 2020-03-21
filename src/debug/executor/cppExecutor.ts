@@ -51,8 +51,11 @@ class CppExecutor {
         const moduleExportsReg: RegExp = /\/\/ @before-stub-for-debug-begin/;
         if (!moduleExportsReg.test(sourceFileContent)) {
             const newContent: string =
-                `// @before-stub-for-debug-begin\n#include <vector>\nusing namespace std;\n// @before-stub-for-debug-end\n\n` +
-                sourceFileContent;
+                `// @before-stub-for-debug-begin
+#include <vector>
+#include <string>
+using namespace std;
+// @before-stub-for-debug-end\n\n` + sourceFileContent;
             await fse.writeFile(filePath, newContent);
 
             // create source file for build because g++ does not support inlucde file with chinese name
@@ -61,14 +64,74 @@ class CppExecutor {
             await fse.writeFile(newSourceFilePath, sourceFileContent);
         }
 
+        const params: string[] = testString.split("\\n");
+        const paramsType: string[] = problemType.paramTypes;
+        if (params.length !== paramsType.length) {
+            vscode.window.showErrorMessage("Input parameters is not match the probleam!");
+            return;
+        }
+
+        const indent: string = "    ";
+        let insertCode: string = `vector<string> params{${params.map((p: string) => `"${p}"`).join(", ")}};\n`;
+        const callArgs: string[] = [];
+        paramsType.map((type: string, index: number) => {
+            callArgs.push(`arg${index}`);
+
+            insertCode += `
+    string param${index} = params[${index}];
+    cJSON *item${index} = cJSON_Parse(param${index}.c_str());
+`;
+            switch (type) {
+                case "number":
+                    insertCode += `${indent}int arg${index} = parseNumber(item${index});\n`;
+                    break;
+                case "number[]":
+                    insertCode += `${indent}vector<int> arg${index} = parseNumberArray(item${index});\n`;
+                    break;
+                case "number[][]":
+                    insertCode += `${indent}vector<vector<int>> arg${index} = parseNumberArrayArray(item${index});\n`;
+                    break;
+                case "string":
+                    insertCode += `${indent}string arg${index} = parseString(item${index});\n`;
+                    break;
+                case "string[]":
+                    insertCode += `${indent}vector<string> arg${index} = parseStringArray(item${index});\n`;
+                    break;
+                case "string[][]":
+                    insertCode += `${indent}vector<vector<string>> arg${index} = parseStringArrayArray(item${index});\n`;
+                    break;
+                // case "ListNode":
+                //     return parseListNode(param);
+                // case "ListNode[]":
+                //     return parseListNodeArray(param);
+                case "character":
+                    insertCode += `${indent}char arg${index} = parseCharacter(item${index});\n`;
+                    break;
+                case "character[]":
+                    insertCode += `${indent}vector<char> arg${index} = parseCharacterArray(item${index});\n`;
+                    break;
+                case "character[][]":
+                    insertCode += `${indent}vector<vector<char>> arg${index} = parseCharacterArrayArray(item${index});\n`;
+                    break;
+                // case "NestedInteger[]":
+                //     return parseNestedIntegerArray(param);
+                // case "MountainArray":
+                //     return parseMountainArray(param);
+                // case "TreeNode":
+                //     return parseTreeNode(param);
+            }
+        });
+
+        insertCode += `${indent}(new Solution())->${problemType.funName}(${callArgs.join(", ")});\n`;
+
         // insert include code and replace function namem
         const includeFileRegExp: RegExp = /\/\/ @@stub\-for\-include\-code@@/;
+        const codeRegExp: RegExp = /\/\/ @@stub\-for\-body\-code@@/;
         const entryFile: string = debugConfig.program;
         const entryFileContent: string = (await fse.readFile(entryFile)).toString();
-        const newEntryFileContent: string = entryFileContent.replace(
-            includeFileRegExp,
-            `#include "${newSourceFileName}"`,
-        );
+        const newEntryFileContent: string = entryFileContent
+            .replace(includeFileRegExp, `#include "${newSourceFileName}"`)
+            .replace(codeRegExp, insertCode);
         await fse.writeFile(entryFile, newEntryFileContent);
 
         const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
@@ -96,7 +159,7 @@ class CppExecutor {
 
         const args: string[] = [
             filePath,
-            testString,
+            testString.replace(/\\"/g, '\\\\"'),
             problemType.funName,
             problemType.paramTypes.join(","),
             problemType.returnType,
