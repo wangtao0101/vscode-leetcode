@@ -47,6 +47,8 @@ class CppExecutor {
         const newSourceFileName: string = `source${language}problem${meta.id}.cpp`;
         const newSourceFilePath: string = path.join(extensionState.cachePath, newSourceFileName);
 
+        const commonIncludeContent: string = `common${language}problem${meta.id}.cpp`;
+
         // check whether module.exports is exist or not
         const moduleExportsReg: RegExp = /\/\/ @before-stub-for-debug-begin/;
         if (!moduleExportsReg.test(sourceFileContent)) {
@@ -54,6 +56,8 @@ class CppExecutor {
                 `// @before-stub-for-debug-begin
 #include <vector>
 #include <string>
+#include "${commonIncludeContent}"
+
 using namespace std;
 // @before-stub-for-debug-end\n\n` + sourceFileContent;
             await fse.writeFile(filePath, newContent);
@@ -100,10 +104,12 @@ using namespace std;
                 case "string[][]":
                     insertCode += `${indent}vector<vector<string>> arg${index} = parseStringArrayArray(item${index});\n`;
                     break;
-                // case "ListNode":
-                //     return parseListNode(param);
-                // case "ListNode[]":
-                //     return parseListNodeArray(param);
+                case "ListNode":
+                    insertCode += `${indent}ListNode *arg${index} = parseListNode(parseNumberArray(item${index}));\n`;
+                    break;
+                case "ListNode[]":
+                    insertCode += `${indent}vector<ListNode *> arg${index} = parseListNodeArray(parseNumberArrayArray(item${index}));\n`;
+                    break;
                 case "character":
                     insertCode += `${indent}char arg${index} = parseCharacter(item${index});\n`;
                     break;
@@ -130,13 +136,19 @@ using namespace std;
         const entryFile: string = debugConfig.program;
         const entryFileContent: string = (await fse.readFile(entryFile)).toString();
         const newEntryFileContent: string = entryFileContent
-            .replace(includeFileRegExp, `#include "${newSourceFileName}"`)
+            .replace(includeFileRegExp, `#include "${newSourceFileName}"\n#include "${commonIncludeContent}"`)
             .replace(codeRegExp, insertCode);
         await fse.writeFile(entryFile, newEntryFileContent);
 
-        const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
-
         const extDir: string = vscode.extensions.getExtension("wangtao0101.debug-leetcode")!.extensionPath;
+
+        // copy common.cpp
+        const commonPath: string = path.join(extDir, "src/debug/entry/cpp/common.cpp");
+        const commonContent: string = (await fse.readFile(commonPath)).toString();
+        const commonDestPath: string = path.join(extensionState.cachePath, `common${language}problem${meta.id}.cpp`);
+        await fse.writeFile(commonDestPath, commonContent);
+
+        const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
         const thirdPartyPath: string = path.join(extDir, "src/debug/thirdparty/c");
 
         try {

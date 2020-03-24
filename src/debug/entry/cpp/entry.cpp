@@ -135,6 +135,36 @@ vector<vector<char>> parseCharacterArrayArray(cJSON *node)
     return res;
 }
 
+ListNode *parseListNode(const vector<int> &vec)
+{
+    ListNode *head = nullptr;
+    ListNode *current = nullptr;
+    for (int i = 0; i < vec.size(); i++)
+    {
+        if (i == 0)
+        {
+            head = new ListNode(vec[i]);
+            current = head;
+        }
+        else
+        {
+            current->next = new ListNode(vec[i]);
+            current = current->next;
+        }
+    }
+    return head;
+}
+
+vector<ListNode *> parseListNodeArray(const vector<vector<int>> &vec)
+{
+    vector<ListNode *> res{};
+    for (int i = 0; i < vec.size(); i++)
+    {
+        res.push_back(parseListNode(vec[i]));
+    }
+    return res;
+}
+
 int main(int argc, char **argv)
 {
     for (int i = 0; i < argc; i++)
