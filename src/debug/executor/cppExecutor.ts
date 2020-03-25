@@ -47,7 +47,8 @@ class CppExecutor {
         const newSourceFileName: string = `source${language}problem${meta.id}.cpp`;
         const newSourceFilePath: string = path.join(extensionState.cachePath, newSourceFileName);
 
-        const commonIncludeContent: string = `common${language}problem${meta.id}.cpp`;
+        const commonHeaderName: string = `common${language}problem${meta.id}.h`;
+        const commonImplementName: string = `common${language}problem${meta.id}.cpp`;
 
         // check whether module.exports is exist or not
         const moduleExportsReg: RegExp = /\/\/ @before-stub-for-debug-begin/;
@@ -56,7 +57,7 @@ class CppExecutor {
                 `// @before-stub-for-debug-begin
 #include <vector>
 #include <string>
-#include "${commonIncludeContent}"
+#include "${commonHeaderName}"
 
 using namespace std;
 // @before-stub-for-debug-end\n\n` + sourceFileContent;
@@ -119,8 +120,9 @@ using namespace std;
                 case "character[][]":
                     insertCode += `${indent}vector<vector<char>> arg${index} = parseCharacterArrayArray(item${index});\n`;
                     break;
-                // case "NestedInteger[]":
-                //     return parseNestedIntegerArray(param);
+                case "NestedInteger[]":
+                    insertCode += `${indent}vector<NestedInteger> arg${index} = parseNestedIntegerArray(item${index});\n`;
+                    break;
                 // case "MountainArray":
                 //     return parseMountainArray(param);
                 // case "TreeNode":
@@ -128,7 +130,12 @@ using namespace std;
             }
         });
 
-        insertCode += `${indent}(new Solution())->${problemType.funName}(${callArgs.join(", ")});\n`;
+        if (meta.id === "341") {
+            insertCode += `${indent}NestedIterator i(arg0);\n`;
+            insertCode += `${indent}while (i.hasNext()) cout << i.next();;\n`;
+        } else {
+            insertCode += `${indent}(new Solution())->${problemType.funName}(${callArgs.join(", ")});\n`;
+        }
 
         // insert include code and replace function namem
         const includeFileRegExp: RegExp = /\/\/ @@stub\-for\-include\-code@@/;
@@ -136,25 +143,32 @@ using namespace std;
         const entryFile: string = debugConfig.program;
         const entryFileContent: string = (await fse.readFile(entryFile)).toString();
         const newEntryFileContent: string = entryFileContent
-            .replace(includeFileRegExp, `#include "${newSourceFileName}"\n#include "${commonIncludeContent}"`)
+            .replace(includeFileRegExp, `#include "${commonHeaderName}"\n#include "${newSourceFileName}"`)
             .replace(codeRegExp, insertCode);
         await fse.writeFile(entryFile, newEntryFileContent);
 
         const extDir: string = vscode.extensions.getExtension("wangtao0101.debug-leetcode")!.extensionPath;
 
         // copy common.cpp
-        const commonPath: string = path.join(extDir, "src/debug/entry/cpp/common.cpp");
-        const commonContent: string = (await fse.readFile(commonPath)).toString();
-        const commonDestPath: string = path.join(extensionState.cachePath, `common${language}problem${meta.id}.cpp`);
+        const commonHeaderPath: string = path.join(extDir, "src/debug/entry/cpp/problems/common.h");
+        const commonHeaderContent: string = (await fse.readFile(commonHeaderPath)).toString();
+        const commonHeaderDestPath: string = path.join(extensionState.cachePath, commonHeaderName);
+        await fse.writeFile(commonHeaderDestPath, commonHeaderContent);
+        const commonPath: string = path.join(extDir, "src/debug/entry/cpp/problems/common.cpp");
+        const commonContent: string = (await fse.readFile(commonPath))
+            .toString()
+            .replace(includeFileRegExp, `#include "${commonHeaderName}"`);
+        const commonDestPath: string = path.join(extensionState.cachePath, commonImplementName);
         await fse.writeFile(commonDestPath, commonContent);
 
         const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
         const thirdPartyPath: string = path.join(extDir, "src/debug/thirdparty/c");
+        const jsonPath: string = path.join(extDir, "src/debug/thirdparty/c/cJSON.c");
 
         try {
             const includePath: string = path.dirname(exePath);
             await executeCommand("g++.exe -g", [
-                `${debugConfig.program} -o ${exePath} -I ${includePath} -I ${thirdPartyPath}`,
+                `${debugConfig.program} ${commonDestPath} ${jsonPath} -o ${exePath} -I ${includePath} -I ${thirdPartyPath}`,
             ]);
         } catch (e) {
             // vscode.window.showErrorMessage(e);
