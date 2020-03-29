@@ -1,4 +1,5 @@
 #include <vector>
+#include <queue>
 using namespace std;
 
 #include "cJSON.h"
@@ -221,4 +222,59 @@ int MountainArray::get(int index)
 int MountainArray::length()
 {
     return this->value.size();
+}
+
+TreeNode *parseTreeNodeElement(cJSON *node)
+{
+    if (node->type != cJSON_Number)
+    {
+        return nullptr;
+    }
+    return new TreeNode(node->valueint);
+}
+
+TreeNode *parseTreeNode(const cJSON *node)
+{
+    TreeNode *root = nullptr;
+    TreeNode *parent = nullptr;
+    queue<TreeNode *> q;
+    int i = 0;
+
+    if (node->type != cJSON_Array)
+    {
+        throw "Parse parameter error, expect NumberArray";
+    }
+    int size = cJSON_GetArraySize(node);
+
+    while (i < size)
+    {
+        if (i == 0)
+        {
+            TreeNode *child = parseTreeNodeElement(cJSON_GetArrayItem(node, i));
+            root = child;
+            i += 1;
+            q.push(root);
+            continue;
+        }
+
+        parent = q.front();
+        q.pop();
+        TreeNode *left = parseTreeNodeElement(cJSON_GetArrayItem(node, i));
+        if (left != nullptr)
+        {
+            parent->left = left;
+            q.push(left);
+        }
+        if (i + 1 < size)
+        {
+            TreeNode *right = parseTreeNodeElement(cJSON_GetArrayItem(node, i + 1));
+            if (right != nullptr)
+            {
+                parent->right = right;
+                q.push(right);
+            }
+        }
+        i = i + 2;
+    }
+    return root;
 }

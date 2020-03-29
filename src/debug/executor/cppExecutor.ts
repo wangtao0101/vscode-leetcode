@@ -126,8 +126,8 @@ using namespace std;
                 case "MountainArray":
                     insertCode += `${indent}MountainArray arg${index} = MountainArray(parseNumberArray(item${index}));\n`;
                     break;
-                // case "TreeNode":
-                //     return parseTreeNode(param);
+                case "TreeNode":
+                    insertCode += `${indent}TreeNode * arg${index} = parseTreeNode(item${index});\n`;
             }
         });
 
