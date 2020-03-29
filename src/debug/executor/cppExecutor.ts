@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import { extensionState } from "../../extensionState";
 import { leetCodeChannel } from "../../leetCodeChannel";
 import { executeCommand } from "../../utils/cpUtils";
-import { fileMeta, getEntryFile, randomString } from "../../utils/problemUtils";
+import { fileMeta, getEntryFile, randomString, getProblemSpecialCode } from "../../utils/problemUtils";
 import { IDebugConfig, IProblemType } from "../debugExecutor";
 import problemTypes from "../problemTypes";
 
@@ -128,6 +128,10 @@ using namespace std;
                     break;
                 case "TreeNode":
                     insertCode += `${indent}TreeNode * arg${index} = parseTreeNode(item${index});\n`;
+                    break;
+                case "Node":
+                    insertCode += `${indent}Node * arg${index} = parseNode(item${index});\n`;
+                    break;
             }
         });
 
@@ -152,17 +156,29 @@ using namespace std;
 
         const extDir: string = vscode.extensions.getExtension("wangtao0101.debug-leetcode")!.extensionPath;
 
-        // copy common.cpp
+        // copy common.h
         const commonHeaderPath: string = path.join(extDir, "src/debug/entry/cpp/problems/common.h");
         const commonHeaderContent: string = (await fse.readFile(commonHeaderPath)).toString();
         const commonHeaderDestPath: string = path.join(extensionState.cachePath, commonHeaderName);
-        await fse.writeFile(commonHeaderDestPath, commonHeaderContent);
+
+        const specialDefineCode: string = await getProblemSpecialCode(language, meta.id, "h", extDir);
+        await fse.writeFile(
+            commonHeaderDestPath,
+            commonHeaderContent.replace(/\/\/ @@stub\-for\-problem\-define\-code@@/, specialDefineCode),
+        );
+
+        // copy common.cpp
         const commonPath: string = path.join(extDir, "src/debug/entry/cpp/problems/common.cpp");
         const commonContent: string = (await fse.readFile(commonPath))
             .toString()
             .replace(includeFileRegExp, `#include "${commonHeaderName}"`);
         const commonDestPath: string = path.join(extensionState.cachePath, commonImplementName);
-        await fse.writeFile(commonDestPath, commonContent);
+
+        const specialCode: string = await getProblemSpecialCode(language, meta.id, "cpp", extDir);
+        await fse.writeFile(
+            commonDestPath,
+            commonContent.replace(/\/\/ @@stub\-for\-problem\-define\-code@@/, specialCode),
+        );
 
         const exePath: string = path.join(extensionState.cachePath, `${language}problem${meta.id}.exe`);
         const thirdPartyPath: string = path.join(extDir, "src/debug/thirdparty/c");

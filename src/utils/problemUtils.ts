@@ -77,7 +77,7 @@ export async function getUnstubedFile(filePath: string): Promise<string> {
     return newPath;
 }
 
-async function getProblemSpecialCode(
+export async function getProblemSpecialCode(
     language: string,
     problem: string,
     fileExt: string,
@@ -88,6 +88,9 @@ async function getProblemSpecialCode(
     if (isSpecial) {
         const specialContent: Buffer = await fse.readFile(problemPath);
         return specialContent.toString();
+    }
+    if (language === "cpp") {
+        return "";
     }
     const fileContent: Buffer = await fse.readFile(
         path.join(extDir, "src/debug/entry", language, "problems", `common.${fileExt}`),
