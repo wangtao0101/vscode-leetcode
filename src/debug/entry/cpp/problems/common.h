@@ -51,4 +51,15 @@ public:
 
 vector<NestedInteger> parseNestedIntegerArray(cJSON *node);
 
+class MountainArray
+{
+private:
+    vector<int> value{};
+
+public:
+    MountainArray(const vector<int> &ve);
+    int get(int index);
+    int length();
+};
+
 #endif

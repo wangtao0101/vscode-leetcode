@@ -5281,7 +5281,8 @@ export default {
     },
     1095: {
         funName: "findInMountainArray",
-        paramTypes: ["number", "MountainArray"],
+        // change the order of paramTypes
+        paramTypes: ["MountainArray", "number"],
         returnType: "number",
         testCase: "[1,2,3,4,5,3,1]\\n3",
     },

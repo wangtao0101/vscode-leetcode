@@ -123,8 +123,9 @@ using namespace std;
                 case "NestedInteger[]":
                     insertCode += `${indent}vector<NestedInteger> arg${index} = parseNestedIntegerArray(item${index});\n`;
                     break;
-                // case "MountainArray":
-                //     return parseMountainArray(param);
+                case "MountainArray":
+                    insertCode += `${indent}MountainArray arg${index} = MountainArray(parseNumberArray(item${index}));\n`;
+                    break;
                 // case "TreeNode":
                 //     return parseTreeNode(param);
             }
@@ -133,6 +134,8 @@ using namespace std;
         if (meta.id === "341") {
             insertCode += `${indent}NestedIterator i(arg0);\n`;
             insertCode += `${indent}while (i.hasNext()) cout << i.next();;\n`;
+        } else if (meta.id === "1095") {
+            insertCode += `${indent}(new Solution())->${problemType.funName}(arg1, arg0);\n`;
         } else {
             insertCode += `${indent}(new Solution())->${problemType.funName}(${callArgs.join(", ")});\n`;
         }

@@ -203,3 +203,22 @@ const vector<NestedInteger> &NestedInteger::getList() const
 {
     return this->list;
 }
+
+MountainArray::MountainArray(const vector<int> &vec)
+{
+    this->value = vec;
+}
+
+int MountainArray::get(int index)
+{
+    if (index >= this->value.size())
+    {
+        return -1;
+    }
+    return this->value[index];
+}
+
+int MountainArray::length()
+{
+    return this->value.size();
+}
