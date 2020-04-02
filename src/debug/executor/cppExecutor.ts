@@ -130,7 +130,13 @@ using namespace std;
                     insertCode += `${indent}TreeNode * arg${index} = parseTreeNode(item${index});\n`;
                     break;
                 case "Node":
-                    insertCode += `${indent}Node * arg${index} = parseNode(item${index});\n`;
+                    if (meta.id === "116" || meta.id === "117") {
+                        insertCode += `${indent}Node * arg${index} = parseNode(item${index});\n`;
+                    } else if (meta.id === "133") {
+                        insertCode += `${indent}Node * arg${index} = parseNode(parseNumberArrayArray(item${index}));\n`;
+                    } else if (meta.id === "138") {
+                        insertCode += `${indent}Node * arg${index} = parseNode(parsecJSONArray(item${index}));\n`;
+                    }
                     break;
             }
         });

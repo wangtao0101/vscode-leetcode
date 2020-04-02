@@ -279,4 +279,14 @@ TreeNode *parseTreeNode(const cJSON *node)
     return root;
 }
 
+vector<cJSON *> parsecJSONArray(const cJSON *node)
+{
+    vector<cJSON *> res{};
+    for (int i = 0; i < cJSON_GetArraySize(node); i++)
+    {
+        res.push_back(cJSON_GetArrayItem(node, i));
+    }
+    return res;
+}
+
 // @@stub-for-problem-define-code@@

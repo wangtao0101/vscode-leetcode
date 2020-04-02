@@ -74,6 +74,8 @@ struct TreeNode
 
 TreeNode *parseTreeNode(const cJSON *node);
 
+vector<cJSON *> parsecJSONArray(const cJSON *node);
+
 // @@stub-for-problem-define-code@@
 
 #endif
