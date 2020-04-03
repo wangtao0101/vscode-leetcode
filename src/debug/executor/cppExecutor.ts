@@ -140,8 +140,10 @@ using namespace std;
                     break;
             }
         });
-
-        if (meta.id === "341") {
+        if (meta.id === "278") {
+            insertCode += `${indent}badVersion = arg1;\n`;
+            insertCode += `${indent}(new Solution())->${problemType.funName}(arg0);\n`;
+        } else if (meta.id === "341") {
             insertCode += `${indent}NestedIterator i(arg0);\n`;
             insertCode += `${indent}while (i.hasNext()) cout << i.next();;\n`;
         } else if (meta.id === "1095") {

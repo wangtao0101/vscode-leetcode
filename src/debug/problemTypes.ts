@@ -1373,7 +1373,8 @@ export default {
         specialFunName: {
             javascript: "solution",
         },
-        paramTypes: ["function"],
+        // changede from original
+        paramTypes: ["number", "number"],
         returnType: "function",
         testCase: "5\\n4",
     },
