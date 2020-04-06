@@ -21,6 +21,19 @@ const debugConfig: IDebugConfig = {
     miDebuggerPath: "gdb.exe",
 };
 
+const templateMap: any = {
+    116: [117],
+    429: [559, 589, 590],
+};
+
+function getTemplateId(id: string): string {
+    const findKey: string | undefined = Object.keys(templateMap).find((key) => {
+        const numId: number = parseInt(id, 10);
+        return templateMap[key].includes(numId);
+    });
+    return findKey ? findKey : id;
+}
+
 class CppExecutor {
     public async execute(
         filePath: string,
@@ -76,6 +89,8 @@ using namespace std;
             return;
         }
 
+        const templateId: string = getTemplateId(meta.id);
+
         const indent: string = "    ";
         let insertCode: string = `vector<string> params{${params.map((p: string) => `"${p}"`).join(", ")}};\n`;
         const callArgs: string[] = [];
@@ -130,9 +145,9 @@ using namespace std;
                     insertCode += `${indent}TreeNode * arg${index} = parseTreeNode(item${index});\n`;
                     break;
                 case "Node":
-                    if (meta.id === "133") {
+                    if (templateId === "133") {
                         insertCode += `${indent}Node * arg${index} = parseNode(parseNumberArrayArray(item${index}));\n`;
-                    } else if (meta.id === "138") {
+                    } else if (templateId === "138") {
                         insertCode += `${indent}Node * arg${index} = parseNode(parsecJSONArray(item${index}));\n`;
                     } else {
                         insertCode += `${indent}Node * arg${index} = parseNode(item${index});\n`;
@@ -140,13 +155,13 @@ using namespace std;
                     break;
             }
         });
-        if (meta.id === "278") {
+        if (templateId === "278") {
             insertCode += `${indent}badVersion = arg1;\n`;
             insertCode += `${indent}(new Solution())->${problemType.funName}(arg0);\n`;
-        } else if (meta.id === "341") {
+        } else if (templateId === "341") {
             insertCode += `${indent}NestedIterator i(arg0);\n`;
             insertCode += `${indent}while (i.hasNext()) cout << i.next();;\n`;
-        } else if (meta.id === "1095") {
+        } else if (templateId === "1095") {
             insertCode += `${indent}(new Solution())->${problemType.funName}(arg1, arg0);\n`;
         } else {
             insertCode += `${indent}(new Solution())->${problemType.funName}(${callArgs.join(", ")});\n`;
@@ -169,7 +184,7 @@ using namespace std;
         const commonHeaderContent: string = (await fse.readFile(commonHeaderPath)).toString();
         const commonHeaderDestPath: string = path.join(extensionState.cachePath, commonHeaderName);
 
-        const specialDefineCode: string = await getProblemSpecialCode(language, meta.id, "h", extDir);
+        const specialDefineCode: string = await getProblemSpecialCode(language, templateId, "h", extDir);
         await fse.writeFile(
             commonHeaderDestPath,
             commonHeaderContent.replace(/\/\/ @@stub\-for\-problem\-define\-code@@/, specialDefineCode),
@@ -182,7 +197,7 @@ using namespace std;
             .replace(includeFileRegExp, `#include "${commonHeaderName}"`);
         const commonDestPath: string = path.join(extensionState.cachePath, commonImplementName);
 
-        const specialCode: string = await getProblemSpecialCode(language, meta.id, "cpp", extDir);
+        const specialCode: string = await getProblemSpecialCode(language, templateId, "cpp", extDir);
         await fse.writeFile(
             commonDestPath,
             commonContent.replace(/\/\/ @@stub\-for\-problem\-define\-code@@/, specialCode),
