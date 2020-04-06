@@ -3928,7 +3928,8 @@ export default {
     },
     843: {
         funName: "findSecretWord",
-        paramTypes: ["string[]", "Master"],
+        // changede from original
+        paramTypes: ["string", "string[]", "number"],
         returnType: "void",
         testCase: '"acckzz"\\n["acckzz","ccbazz","eiowzz","abcczz"]\\n10',
     },

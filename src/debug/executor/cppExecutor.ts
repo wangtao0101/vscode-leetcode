@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import { extensionState } from "../../extensionState";
 import { leetCodeChannel } from "../../leetCodeChannel";
 import { executeCommand } from "../../utils/cpUtils";
-import { fileMeta, getEntryFile, randomString, getProblemSpecialCode } from "../../utils/problemUtils";
+import { fileMeta, getEntryFile, getProblemSpecialCode, randomString } from "../../utils/problemUtils";
 import { IDebugConfig, IProblemType } from "../debugExecutor";
 import problemTypes from "../problemTypes";
 
@@ -27,7 +27,7 @@ const templateMap: any = {
 };
 
 function getTemplateId(id: string): string {
-    const findKey: string | undefined = Object.keys(templateMap).find((key) => {
+    const findKey: string | undefined = Object.keys(templateMap).find((key: string) => {
         const numId: number = parseInt(id, 10);
         return templateMap[key].includes(numId);
     });
@@ -85,7 +85,7 @@ using namespace std;
         const params: string[] = testString.split("\\n");
         const paramsType: string[] = problemType.paramTypes;
         if (params.length !== paramsType.length) {
-            vscode.window.showErrorMessage("Input parameters is not match the probleam!");
+            vscode.window.showErrorMessage("Input parameters is not match the problem!");
             return;
         }
 
@@ -161,6 +161,10 @@ using namespace std;
         } else if (templateId === "341") {
             insertCode += `${indent}NestedIterator i(arg0);\n`;
             insertCode += `${indent}while (i.hasNext()) cout << i.next();;\n`;
+        } else if (templateId === "843") {
+            insertCode += `${indent}secret = arg0;\n`;
+            insertCode += `${indent}Master master;\n`;
+            insertCode += `${indent}(new Solution())->${problemType.funName}(arg1, master);\n`;
         } else if (templateId === "1095") {
             insertCode += `${indent}(new Solution())->${problemType.funName}(arg1, arg0);\n`;
         } else {
